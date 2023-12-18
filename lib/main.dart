@@ -1,8 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
-//part 'task.g.dart';
+import 'models/task.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,12 +18,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Equation Expedition',
+      theme: ThemeData.dark(),
+      home: const MyHomePage(title: 'Equation Expedition'),
     );
   }
 }
@@ -42,7 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _answer = 0;
   int _userAnswer = 0;
   int _score = 0;
-  int _highestScore = 0;
+  int _highestScore = Hive.box('tasks').get('highestScore');
   String  _result = "";
 
   void _equationCreator() {
@@ -56,10 +52,18 @@ class _MyHomePageState extends State<MyHomePage> {
           _answer = _firstNumber * _secondNumber;
           print(_answer);
         }
-      else if (_determiner == 1 && _firstNumber / _secondNumber == int && _firstNumber != 0) {
-        _equation = "$_firstNumber / $_secondNumber";
-        _answer = (_firstNumber / _secondNumber) as int;
-        print(_answer);
+      else if (_determiner == 1 && (_firstNumber % _secondNumber == 0 || _secondNumber % _firstNumber == 0) && _firstNumber != 0  && _secondNumber != 0) {
+        if(_firstNumber % _secondNumber == 0) {
+          _equation = "$_firstNumber / $_secondNumber";
+          _answer = (_firstNumber / _secondNumber) as int;
+          print(_answer);
+        }
+        else if (_secondNumber % _firstNumber == 0)
+          {
+            _equation = "$_firstNumber / $_secondNumber";
+            _answer = (_firstNumber / _secondNumber) as int;
+            print(_answer);
+          }
       }
       else if (_determiner == 2) {
         _equation = "$_firstNumber - $_secondNumber";
@@ -79,8 +83,9 @@ class _MyHomePageState extends State<MyHomePage> {
     _equationCreator();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Equation Expedition"),
+        backgroundColor: Theme.of(context).colorScheme.background,
+        title: Text("Equation Expedition", style: TextStyle( fontFamily: 'Silkscreen', fontSize: 50.0)),
+        centerTitle: true,
       ),
       body: Center(
         child: Column(
@@ -121,18 +126,24 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print("in on click ==========");
             setState(() {
               _userAnswer = int.parse(_userAnswerTextField.text);
               if (_userAnswer == _answer) {
                 _score++;
+                if (_score > _highestScore)
+                  {
+                    _highestScore = _score;
+                  }
                 _result = "Correct! The answer was $_answer";
+                _userAnswerTextField.text = "";
                 _equationCreator();
-
               }
               else {
-                _result = "Incorrect! The answer was $_answer";
-                _equationCreator();
+                setState(() {
+                  _result = "Incorrect! The answer was $_answer";
+                  _equationCreator();
+                  _userAnswerTextField.text = "";
+                });
               }
             });
         },
